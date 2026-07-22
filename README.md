@@ -65,22 +65,6 @@ exception/    X9ParseException
 resources/templates   Thymeleaf pages (upload, result, error)
 resources/static/css  stylesheet
 ```
-
-## Design notes
-
-- **The parser has no web dependency.** `X9ParserService.parse(byte[])` takes
-  bytes and returns objects; it never reads a path or writes a file. That keeps
-  the parsing reusable and unit-testable on its own, and lets the controller -
-  not the parser - decide what to do with the results.
-- **Layered.** The controller handles HTTP, the service does the parsing, the
-  models carry the data. Each has one job.
-- **Errors are handled in one place.** A `@ControllerAdvice` turns a bad or
-  non-X9 file, an over-size upload, or a malformed request into a friendly
-  message on the form instead of a stack trace.
-- **Nothing touches the disk.** The upload is parsed in memory and held in the
-  session; downloads stream from memory. Image downloads are matched by name
-  against the parsed images, so a request can't reach the file system.
-
 ## Testing
 
 16 tests:

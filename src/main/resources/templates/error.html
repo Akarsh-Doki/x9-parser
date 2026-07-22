@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>X9 Parser - Something went wrong</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <h1>Something went wrong</h1>
+        <p class="subtitle">
+            The request could not be completed
+            <span th:if="${status}">(status <span th:text="${status}">500</span>)</span>.
+        </p>
+        <p><a class="button" th:href="@{/}">Back to the upload form</a></p>
+    </div>
+</body>
+</html>

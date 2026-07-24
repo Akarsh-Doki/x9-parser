@@ -2,57 +2,27 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>X9 Parser - Results</title>
+    <title>X9 Parser - Done</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
     <div class="container">
-        <h1>Parse results</h1>
+        <h1>File parsed successfully</h1>
 
         <p class="summary">
-            Found <strong th:text="${result.checkCount}">0</strong> checks and
-            <strong th:text="${result.imageCount}">0</strong> images<span
-                th:if="${fileName}"> in <span th:text="${fileName}">file</span></span>.
+            Parsed <strong th:text="${summary.checksParsed}">0</strong> checks,
+            wrote <strong th:text="${summary.rowsWritten}">0</strong> rows and
+            <strong th:text="${summary.imagesWritten}">0</strong> images
+            in <span th:text="${summary.millis}">0</span> ms
+            (<span th:text="${summary.checksPerSecond}">0</span> checks/sec).
         </p>
 
-        <p>
-            <a class="button" th:href="@{/download/csv}">Download CSV</a>
-        </p>
-
-        <h2>Check data</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th th:each="column : ${columns}" th:text="${column}">Column</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="check : ${result.checks}">
-                    <td th:each="column : ${columns}" th:text="${check.get(column)}">value</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h2>Images</h2>
+        <h2>Output files</h2>
         <table class="images-table">
-            <thead>
-                <tr>
-                    <th class="num">Check</th>
-                    <th>Side</th>
-                    <th>File</th>
-                    <th class="num">Size</th>
-                </tr>
-            </thead>
             <tbody>
-                <tr th:each="image : ${result.images}">
-                    <td class="num" th:text="${image.checkNumber}">1</td>
-                    <td><span class="tag" th:text="${image.side.label}">Front</span></td>
-                    <td>
-                        <a th:href="@{/download/image/{name}(name=${image.fileName})}"
-                           th:text="${image.fileName}">check1_F.tif</a>
-                    </td>
-                    <td class="num" th:text="${image.sizeLabel}">12.3 KB</td>
-                </tr>
+                <tr><td>Data (big format)</td><td th:text="${summary.bigCsvPath}">big.csv</td></tr>
+                <tr><td>Data (short format)</td><td th:text="${summary.shortCsvPath}">short.csv</td></tr>
+                <tr><td>Images</td><td th:text="${summary.imagesDir}">images</td></tr>
             </tbody>
         </table>
 

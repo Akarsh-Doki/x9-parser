@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>X9 Parser</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <h1>X9 File Parser</h1>
+        <p class="subtitle">
+            Enter the full path (or file name) of an X9.37 file. The check data is
+            written to two CSV files and the images to a folder.
+        </p>
+
+        <div class="error" th:if="${error}" th:text="${error}"></div>
+
+        <form method="post" th:action="@{/parse}">
+            <input type="text" name="filePath" class="path-input"
+                   placeholder="e.g. /Users/you/files/checks.x9">
+            <button type="submit">Parse file</button>
+        </form>
+    </div>
+</body>
+</html>

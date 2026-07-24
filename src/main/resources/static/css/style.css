@@ -19,8 +19,8 @@
     --danger-fg:     #9a2a1e;
     --danger-line:   #edc6bf;
 
-    --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
 }
 
 * {
@@ -283,4 +283,14 @@ table + p {
     .container {
         padding: 1.5rem 1.25rem 1.75rem;
     }
+}
+
+.path-input {
+    flex: 1;
+    min-width: 320px;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
 }

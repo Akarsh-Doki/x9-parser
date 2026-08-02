@@ -64,6 +64,7 @@ public class SecurityConfig {
             .requestMatchers("/", "/parse").hasRole("ADMIN")
             .anyRequest().authenticated())
         .formLogin(form -> form
+            .loginPage("/login")
             .successHandler(this::redirectAfterLogin)
             .permitAll())
         .logout(logout -> logout

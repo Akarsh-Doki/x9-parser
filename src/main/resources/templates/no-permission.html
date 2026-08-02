@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>X9 Parser - No permission</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;650&display=swap">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container container-narrow">
+        <div class="topbar">
+            <span th:if="${username}">Signed in as <strong th:text="${username}">user</strong></span>
+            <form method="post" th:action="@{/logout}">
+                <button type="submit" class="link-button">Sign out</button>
+            </form>
+        </div>
+
+        <h1>No permission</h1>
+        <div class="error">You do not have permission to parse files.</div>
+        <p class="subtitle">This page is available to all signed in users. Parsing requires the Admin role.</p>
+    </div>
+</body>
+</html>

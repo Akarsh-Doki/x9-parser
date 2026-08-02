@@ -7,6 +7,12 @@
 </head>
 <body>
     <div class="container">
+        <div class="topbar">
+        <span th:if="${username}">Signed in as <strong th:text="${username}">admin</strong></span>
+        <form method="post" th:action="@{/logout}">
+            <button type="submit" class="link-button">Sign out</button>
+        </form>
+    </div>
         <h1>X9 File Parser</h1>
         <p class="subtitle">
             Enter the full path (or file name) of an X9.37 file. The check data is

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>X9 Parser - Sign in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;650&display=swap">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container container-narrow">
+        <h1>Sign in</h1>
+        <p class="subtitle">Sign in to use the X9 file parser.</p>
+
+        <div class="error" th:if="${param.error}">Wrong username or password.</div>
+        <div class="notice" th:if="${param.loggedOut}">You have been signed out.</div>
+
+        <form method="post" th:action="@{/login}" class="stacked">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="path-input" autofocus>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="path-input">
+
+            <button type="submit">Sign in</button>
+        </form>
+    </div>
+</body>
+</html>

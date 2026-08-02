@@ -11,6 +11,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import java.io.IOException;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +27,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "x9")
 public class SecurityConfig {
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
-
+    private static final String ADMIN_AUTHORITY = "ROLE_ADMIN";
     private final SecurityUsersConfig securityUsers;
 
     public SecurityConfig(SecurityUsersConfig securityUsers) {
@@ -53,16 +59,45 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/css/**").permitAll()
-                .requestMatchers("/no-permission").authenticated()
-                .requestMatchers("/", "/parse").hasRole("ADMIN")
-                .anyRequest().authenticated())
-            .formLogin(form -> form.permitAll())
-            .logout(logout -> logout
-                    .logoutSuccessUrl("/login?loggedOut")
-                    .permitAll());
+            .requestMatchers("/login", "/css/**").permitAll()
+            .requestMatchers("/no-permission").authenticated()
+            .requestMatchers("/", "/parse").hasRole("ADMIN")
+            .anyRequest().authenticated())
+        .formLogin(form -> form
+            .successHandler(this::redirectAfterLogin)
+            .permitAll())
+        .logout(logout -> logout
+            .logoutSuccessUrl("/login?loggedOut")
+            .permitAll())
+        .exceptionHandling(handling -> handling
+            .accessDeniedHandler(this::sendToNoPermissionPage));
 
         return http.build();
+    }
+    private void redirectAfterLogin(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+        if (isAdmin(authentication)) {
+            log.info("{} signed in as an admin", authentication.getName());
+            response.sendRedirect(request.getContextPath() + "/");
+        }
+
+        else {
+            log.info("{} signed in without the admin role", authentication.getName());
+            response.sendRedirect(request.getContextPath() + "/no-permission");
+        }
+    }
+
+    // Runs when a signed in user without the Admin role tries to open the parse page directly
+    private void sendToNoPermissionPage(HttpServletRequest request, HttpServletResponse response, AccessDeniedException exception) throws IOException {
+        response.sendRedirect(request.getContextPath() + "/no-permission");
+    }
+
+    private boolean isAdmin(Authentication authentication){
+        for (GrantedAuthority authority : authentication.getAuthorities()){
+            if (authority.getAuthority().equals(ADMIN_AUTHORITY)){
+                return true;
+            }
+        }
+        return false;
     }
 
 }

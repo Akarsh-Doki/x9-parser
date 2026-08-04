@@ -158,6 +158,52 @@ while (record != null) {
 }
 ```
 
+### 9. Chain of Responsibility (the security filter chain)
+
+**What it is:** a request passes through a line of handlers, and each one either
+deals with it or passes it along. Spring Security is built this way: every
+request goes through a chain of filters (check the session, handle the login
+form, check the URL rules) before reaching a controller.
+
+**Trade-off:** the path a request takes is spread across many filters rather
+than being in one place, which is harder to follow, but each filter stays small
+and the chain can be reordered or extended without touching the others.
+
+**Where to see it:** `SecurityConfig.securityFilterChain` builds the chain, and
+the two handlers hook into specific points in it.
+
+**Sample code:**
+```java
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/", "/parse").hasRole("ADMIN")
+            .anyRequest().authenticated())
+        .formLogin(form -> form.loginPage("/login").permitAll());
+    return http.build();
+}
+```
+
+### 10. Role-Based Access Control (RBAC)
+
+**What it is:** permissions are attached to roles rather than to individual
+users, and users are given roles. Here the ADMIN role may parse files and the
+USER role may not.
+
+**Trade-off:** adding a third kind of access means defining a new role and
+updating the rules, but permissions stay in one place instead of being checked
+per user throughout the code.
+
+**Where to see it:** the roles come from the properties file, and the rules are
+in `securityFilterChain`.
+
+**Sample code:**
+```properties
+x9.security.users[0].username=admin
+x9.security.users[0].role=ADMIN
+```
+
 ## How a request flows through the patterns
 
 A single request touches every pattern. This is the path it takes, from the browser to the output files and back:

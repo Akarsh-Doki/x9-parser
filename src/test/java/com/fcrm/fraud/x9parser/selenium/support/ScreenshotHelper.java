@@ -31,15 +31,19 @@ public class ScreenshotHelper {
     public void capture(String name) throws IOException{
         counter++;
         String fileName = String.format("%02d-%s.png", counter, name);
-        File tempImage = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
 
-        Path destination = folder.resolve(fileName);
-        Files.copy(tempImage.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
-
-        screenshots.add(destination);
-        log.info("Saved screenshot {}", destination);
+        try {
+            File tempImage = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            Path destination = folder.resolve(fileName);
+            
+            Files.copy(tempImage.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
+            screenshots.add(destination);
+            log.info("Saved screenshot {}", destination);
+        } 
+        catch (Exception e) {
+            log.warn("Could not capture screenshot {}: {}", fileName, e.getMessage());
+        }
     }
-
     public List<Path> getScreenshots(){
         return screenshots;
     }

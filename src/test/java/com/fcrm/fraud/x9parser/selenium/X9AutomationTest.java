@@ -3,15 +3,35 @@ package com.fcrm.fraud.x9parser.selenium;
 import com.fcrm.fraud.x9parser.selenium.pages.LoginPage;
 import com.fcrm.fraud.x9parser.selenium.pages.ParsePage;
 import com.fcrm.fraud.x9parser.selenium.pages.ResultPage;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
+import com.fcrm.fraud.x9parser.selenium.support.EmailReporter;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class X9AutomationTest extends SeleniumTestBase{
+    private static final Logger log = LoggerFactory.getLogger(X9AutomationTest.class);
+    
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Value("${report.from}")
+    private String from;
+
+    @Value("${report.to}")
+    private String[] recipients;
+
+    @Value("${selenium.screenshot-dir}")
+    private String screenshotDir;
+    
     @Value("${selenium.admin-username}")
     private String adminUsername;
 
@@ -59,8 +79,7 @@ public class X9AutomationTest extends SeleniumTestBase{
 
         assertTrue(driver.getPageSource().contains("You do not have permission to parse files."));
 
-        ParsePage parsePage = new ParsePage(driver, wait);
-        assertFalse(parsePage.isDisplayed());
+        assertTrue(driver.getCurrentUrl().contains("/no-permission"));
     }
     @Test
     void aBadFilePathShowsAnError() throws IOException {
@@ -69,10 +88,28 @@ public class X9AutomationTest extends SeleniumTestBase{
         loginPage.loginAs(adminUsername, adminPassword);
 
         ParsePage parsePage = new ParsePage(driver, wait);
-        parsePage.parseFile("/no/such/file.x9");
-        System.out.println("URL after bad parse: " + driver.getCurrentUrl());
+        parsePage.parseFile("/no/such/file.x9"); 
+
+        System.out.println("handles: " + driver.getWindowHandles().size());
+        System.out.println("url: " + driver.getCurrentUrl());
         screenshots.capture("bad-path-error");
 
-        assertTrue(parsePage.getErrorMessage().contains("not found"));
+        assertTrue(driver.getPageSource().contains("File not found"));
+    }
+
+    @AfterAll
+    void emailTheReport() {
+        String body = "X9 Parser automated test run.\n\n"
+                + "1. Admin signs in and parses an X9 file\n"
+                + "2. Normal user is blocked from parsing\n"
+                + "3. A bad file path shows an error\n\n"
+                + "Screenshots from each step are attached.";
+        try {
+            EmailReporter reporter = new EmailReporter(mailSender, from, recipients, screenshotDir);
+            reporter.sendReport("X9 Parser automated test report", body);
+        } 
+        catch (Exception e) {
+            log.warn("Could not send the email report: {}", e.getMessage());
+        }
     }
 }

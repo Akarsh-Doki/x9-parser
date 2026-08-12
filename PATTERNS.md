@@ -204,6 +204,35 @@ x9.security.users[0].username=admin
 x9.security.users[0].role=ADMIN
 ```
 
+### 11. Page Object Model (Selenium tests)
+
+**What it is:** one class per page in the browser tests. That class holds the
+locators for that page and exposes actions in plain terms, so the tests say what
+to do and the page class knows how to do it.
+
+**Trade-off:** three extra classes instead of calling `findElement` in the tests,
+but a test reads as `loginPage.loginAs(user, password)` rather than a list of
+element lookups, and when the markup changes only one class needs editing.
+
+**Where to see it:** `selenium/pages/LoginPage`, `ParsePage`, and `ResultPage`.
+The locators are stored as `By` constants rather than as `WebElement` fields, so
+each element is looked up fresh and a page reload cannot leave a stale reference.
+
+**Sample code:**
+```java
+public class LoginPage {
+
+    private static final By USERNAME = By.id("username");
+    private static final By PASSWORD = By.id("password");
+
+    public void loginAs(String username, String password) {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(USERNAME)).sendKeys(username);
+        driver.findElement(PASSWORD).sendKeys(password);
+        driver.findElement(PASSWORD).submit();
+    }
+}
+```
+
 ## How a request flows through the patterns
 
 A single request touches every pattern. This is the path it takes, from the browser to the output files and back:

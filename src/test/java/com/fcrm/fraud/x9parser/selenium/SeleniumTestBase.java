@@ -64,7 +64,12 @@ public abstract class SeleniumTestBase {
     @AfterEach
     void stopBrowser() {
         if (driver != null) {
-            driver.quit();
+            try {
+                driver.quit();
+            } 
+            catch (Exception e) {
+                log.warn("Browser did not shut down cleanly: {}", e.getMessage());
+            }
         }
     }
 

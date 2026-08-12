@@ -1,5 +1,7 @@
 package com.fcrm.fraud.x9parser.selenium;
 
+import java.io.IOException;
+
 import com.fcrm.fraud.x9parser.selenium.pages.LoginPage;
 import com.fcrm.fraud.x9parser.selenium.pages.ParsePage;
 import org.junit.jupiter.api.Test;
@@ -26,12 +28,12 @@ class SmokeTest extends SeleniumTestBase {
     }
 
     @Test
-    void theAdminUserCanSignInAndReachTheParsePage() {
+    void theAdminUserCanSignInAndReachTheParsePage() throws IOException{
         openHome();
 
         LoginPage loginPage = new LoginPage(driver, wait);
         loginPage.loginAs(adminUsername, adminPassword);
-
+        screenshots.capture("smoke-check");
         ParsePage parsePage = new ParsePage(driver, wait);
         assertTrue(parsePage.isDisplayed());
         assertTrue(parsePage.getSignedInUser().contains(adminUsername));

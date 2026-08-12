@@ -32,6 +32,7 @@ public class ParsePage {
             return false;
         }
     }
+
     public String getSignedInUser() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(TOPBAR)).getText();
     }

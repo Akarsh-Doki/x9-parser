@@ -1,8 +1,12 @@
 package com.fcrm.fraud.x9parser.selenium;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
+
+import java.io.IOException;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -15,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
+import com.fcrm.fraud.x9parser.selenium.support.ScreenshotHelper;
 import java.time.Duration;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -31,12 +36,16 @@ public abstract class SeleniumTestBase {
     @Value("${selenium.wait-seconds}")
     private int waitSeconds;
 
+    @Value("${selenium.screenshot-dir}")
+    private String screenshotDir;
+
+    protected ScreenshotHelper screenshots;
     protected WebDriver driver;
     protected WebDriverWait wait;
     protected String baseUrl;
 
-    @BeforeAll
-    void startBrowser(){
+    @BeforeEach
+    void startBrowser() throws IOException{
         baseUrl = "http://localhost:" + port;
 
         ChromeOptions options = new ChromeOptions();
@@ -48,13 +57,12 @@ public abstract class SeleniumTestBase {
 
         driver = new ChromeDriver(options);
         wait = new WebDriverWait(driver, Duration.ofSeconds(waitSeconds));
-
+        screenshots = new ScreenshotHelper(driver, screenshotDir);
         log.info("Browser open, testing against {}", baseUrl);
     }
 
-    @AfterAll
+    @AfterEach
     void stopBrowser() {
-        // null check in case startBrowser failed before the driver was created
         if (driver != null) {
             driver.quit();
         }

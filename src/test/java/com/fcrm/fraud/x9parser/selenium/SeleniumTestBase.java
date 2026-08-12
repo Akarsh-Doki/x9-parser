@@ -62,5 +62,7 @@ public abstract class SeleniumTestBase {
 
     protected void openHome() {
         driver.get(baseUrl + "/");
+        driver.manage().deleteAllCookies();
+        driver.get(baseUrl + "/");
     }
 }

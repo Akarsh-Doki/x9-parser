@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 // Reads an X9 file one record at a time and writes the two CSVs and the images as it goes
 @Service
@@ -41,6 +42,7 @@ public class X9StreamProcessor {
         }
 
         String baseName = stripExtension(file.getName());
+        String runId = UUID.randomUUID().toString().substring(0, 8);
         Path outputDir = Path.of(config.getOutputDir());
         Path shortCsv = outputDir.resolve(baseName + "_short.csv");
         Path bigCsv = outputDir.resolve(baseName + "_big.csv");
@@ -56,6 +58,8 @@ public class X9StreamProcessor {
         
         int checkCount = 0;
         int imageCount = 0;
+
+        log.info("[{}] Starting parse of {}", runId, file.getName());
 
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
             CheckCsvWriter csvWriter = new CheckCsvWriter(shortCsv, bigCsv, bigColumns, config, file.getPath())) {
@@ -86,7 +90,7 @@ public class X9StreamProcessor {
                 else if (recordType.equals("52")) {
                     boolean isFront = (imageInCheck == 0);
                     imageInCheck++;
-                    byte[] image = extractImage(recordBytes, text);
+                    byte[] image = extractImage(recordBytes, text, runId);
                     if (image!=null) {
                         String name = "check" + currentCheck + "_" + (isFront ? "F" : "R") + ".tif";
                         imageWriter.write(name, image);
@@ -104,12 +108,13 @@ public class X9StreamProcessor {
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
-        log.info("Processed {}: {} checks, {} images in {} ms", file.getName(), checkCount, imageCount, elapsed);
+        log.info("[{}] Processed {}: {} checks, {} images in {} ms", runId, file.getName(), checkCount, imageCount, elapsed);
 
         ProcessSummary summary = new ProcessSummary(checkCount, checkCount, imageCount, elapsed);
         summary.setShortCsvPath(shortCsv.toString());
         summary.setBigCsvPath(bigCsv.toString());
         summary.setImagesDir(imagesDir.toString());
+        summary.setRunId(runId);
         return summary;
     }
 
@@ -143,7 +148,7 @@ public class X9StreamProcessor {
     }
 
     // Pulls the raw TIFF bytes out of an image record. Returns null if it's malformed.
-    private byte[] extractImage(byte[] recordBytes, String text) {
+    private byte[] extractImage(byte[] recordBytes, String text, String runId) {
         try {
             int keyLength = Integer.parseInt(slice(text, 102, 105));
             int signatureLengthStart = 106 + keyLength;
@@ -155,9 +160,9 @@ public class X9StreamProcessor {
             // the image bytes start right after the key and signature
             int imageStart = (118 + keyLength + signatureLength)-1;
 
-            // if these point past the end of the record, it's corrupt, so skip it
+            // if these point past the end of the record, it's corrupt
             if (imageStart < 0 || imageLength <= 0 || imageStart + imageLength > recordBytes.length) {
-                log.warn("Skipping an image with an unexpected size");
+                log.warn("Skipping an image with an unexpected size", runId);
                 return null;
             }
             byte[] image = new byte[imageLength];
@@ -165,7 +170,7 @@ public class X9StreamProcessor {
             return image;
         }
         catch (NumberFormatException e) {
-            log.warn("Skipping a malformed image record");
+            log.warn("[{}] Skipping a malformed image record", runId);
             return null;
         }
     }

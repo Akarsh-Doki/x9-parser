@@ -10,6 +10,7 @@ public class ProcessSummary {
     private final int rowsWritten;
     private final int imagesWritten;
     private final long millis;
+    private String runId;
     private String bigCsvPath;
     private String shortCsvPath;
     private String imagesDir;
@@ -35,6 +36,10 @@ public class ProcessSummary {
 
     public long getMillis() {
         return millis;
+    }
+
+    public String getRunId(){
+        return runId;
     }
 
     // checks per second, which is used to show the tool handles big files quickly
@@ -63,6 +68,10 @@ public class ProcessSummary {
 
     public String getImagesDir() {
         return imagesDir;
+    }
+
+    public void setRunId(String runId) {
+        this.runId = runId;
     }
 
     public void setImagesDir(String imagesDir) {

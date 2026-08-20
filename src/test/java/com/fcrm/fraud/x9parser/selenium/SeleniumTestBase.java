@@ -54,6 +54,9 @@ public abstract class SeleniumTestBase {
         }
         options.addArguments("--window-size=1400,1000");
         options.addArguments("--remote-allow-origins=*");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
 
         driver = new ChromeDriver(options);
         wait = new WebDriverWait(driver, Duration.ofSeconds(waitSeconds));

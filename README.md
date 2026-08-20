@@ -51,6 +51,19 @@ Run the tests:
 - `X9StreamProcessorTest` - the sample file produces 10 checks, 20 images, and both CSVs.
 - `ParseFlowTest` - the web flow: form loads, a good file shows a summary, bad input shows a message.
 
+## Authentication
+
+Authentication and authorization are provided by Active Directory, running on
+a Windows Server EC2 instance. The application authenticates via LDAP bind
+against the domain `fcrm.local` and derives roles from AD group membership
+(members of `FCRMADMIN` can access the parse function).
+
+Running the app and its tests requires the AD server to be reachable. Because
+the security and Selenium tests authenticate against a live network directory
+rather than an in-memory store, they are occasionally slower or less
+deterministic than the rest of the suite — this is expected for tests against
+real external infrastructure.
+
 ## Output CSV formats
 
 Two files are written each run. The big format matches the downstream Orbograph

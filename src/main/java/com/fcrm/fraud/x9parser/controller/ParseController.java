@@ -23,6 +23,7 @@ public class ParseController {
     @GetMapping("/")
     public String showForm(Principal principal, Model model) {
         addUsername(principal, model);
+        System.out.println("=== HOME PAGE HIT ===");
         return "index";
     }
 

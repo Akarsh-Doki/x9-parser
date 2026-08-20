@@ -3,7 +3,9 @@ package com.fcrm.fraud.x9parser.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -26,6 +28,12 @@ class SecurityFlowTest {
     private WebApplicationContext webApplicationContext;
 
     private MockMvc mockMvc;
+
+    @Value("${selenium.admin-password}")
+    private String adminPassword;
+
+    @Value("${selenium.user-password}")
+    private String userPassword;
 
     @BeforeEach
     void setUp() {
@@ -50,15 +58,15 @@ class SecurityFlowTest {
 
     @Test
     void theAdminUserCanSignInAndLandsOnTheParsePage() throws Exception {
-        mockMvc.perform(formLogin("/login").user("admin").password("admin123"))
-               .andExpect(authenticated().withRoles("ADMIN"))
+        mockMvc.perform(formLogin("/login").user("admin").password(adminPassword))
+               .andExpect(authenticated().withUsername("admin"))
                .andExpect(redirectedUrl("/"));
     }
 
     @Test
     void theNormalUserSignsInAndIsSentToTheNoPermissionPage() throws Exception {
-        mockMvc.perform(formLogin("/login").user("user").password("user123"))
-               .andExpect(authenticated().withRoles("USER"))
+        mockMvc.perform(formLogin("/login").user("user").password(userPassword))
+               .andExpect(authenticated())
                .andExpect(redirectedUrl("/no-permission"));
     }
 

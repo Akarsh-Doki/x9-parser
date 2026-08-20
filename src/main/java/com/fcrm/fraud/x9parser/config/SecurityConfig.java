@@ -1,14 +1,11 @@
 package com.fcrm.fraud.x9parser.config;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,43 +14,33 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import java.io.IOException;
-import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.ArrayList;
-import java.util.List;
 
-@Component
-@ConfigurationProperties(prefix = "x9")
+@Configuration
+@EnableWebSecurity
 public class SecurityConfig {
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
-    private static final String ADMIN_AUTHORITY = "ROLE_ADMIN";
-    private final SecurityUsersConfig securityUsers;
+    private static final String ADMIN_AUTHORITY = "FCRMADMIN";
 
-    public SecurityConfig(SecurityUsersConfig securityUsers) {
-        this.securityUsers=securityUsers;
+    @Value("${x9.security.ad-domain}")
+    private String adDomain;
+
+    @Value("${x9.security.ad-url}")
+    private String adUrl;
+
+    @Bean
+    public ActiveDirectoryLdapAuthenticationProvider activeDirectoryLdapAuthenticationProvider() {
+        ActiveDirectoryLdapAuthenticationProvider provider =
+            new ActiveDirectoryLdapAuthenticationProvider(adDomain, adUrl, "dc=fcrm,dc=local");
+        return provider;
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder){
-        List<UserDetails> users = new ArrayList<>();
-
-        for (SecurityUsersConfig.UserEntry entry : securityUsers.getUsers()) {
-            UserDetails user = User.withUsername(entry.getUsername())
-                                .password(passwordEncoder.encode(entry.getPassword()))
-                                .roles(entry.getRole())
-                                .build();
-            users.add(user);
-            log.info("Loaded user {} with role {}", entry.getUsername(), entry.getRole());
-        }
-
-        return new InMemoryUserDetailsManager(users);
+    public AuthenticationManager authenticationManager(HttpSecurity http, ActiveDirectoryLdapAuthenticationProvider provider) throws Exception {
+        AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
+        authBuilder.authenticationProvider(provider);
+        return authBuilder.build();
     }
 
     @Bean
@@ -61,7 +48,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
             .requestMatchers("/login", "/css/**").permitAll()
             .requestMatchers("/no-permission").authenticated()
-            .requestMatchers("/", "/parse").hasRole("ADMIN")
+            .requestMatchers("/", "/parse").hasAuthority("FCRMADMIN")
             .anyRequest().authenticated())
         .formLogin(form -> form
             .loginPage("/login")

@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Runs the whole flow through the web layer as an Admin user: the form, a good
 // file, and bad input.
 @SpringBootTest
-@WithMockUser(roles = "ADMIN")
+@WithMockUser(authorities = "FCRMADMIN")
 class ParseFlowTest {
 
     @Autowired

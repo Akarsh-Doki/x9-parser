@@ -60,9 +60,8 @@ against the domain `fcrm.local` and derives roles from AD group membership
 
 Running the app and its tests requires the AD server to be reachable. Because
 the security and Selenium tests authenticate against a live network directory
-rather than an in-memory store, they are occasionally slower or less
-deterministic than the rest of the suite — this is expected for tests against
-real external infrastructure.
+rather than in-memory, they are occasionally slower or less
+deterministic than the rest of the suite (this is expected for tests against external infrastructure).
 
 ## Output CSV formats
 

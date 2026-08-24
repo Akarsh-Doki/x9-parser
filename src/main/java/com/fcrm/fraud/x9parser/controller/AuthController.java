@@ -1,4 +1,6 @@
 package com.fcrm.fraud.x9parser.controller;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,9 +17,9 @@ public class AuthController {
     }
 
     @GetMapping("/no-permission")
-    public String showNoPermission(Principal principal, Model model){
-        if (principal != null){
-            model.addAttribute("username", principal.getName());
+    public String showNoPermission(@AuthenticationPrincipal OidcUser user, Model model) {
+        if (user != null) {
+            model.addAttribute("username", user.getPreferredUsername());
         }
         return "no-permission";
     }

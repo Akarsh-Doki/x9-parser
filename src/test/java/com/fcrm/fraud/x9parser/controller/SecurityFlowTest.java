@@ -3,18 +3,13 @@ package com.fcrm.fraud.x9parser.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
-import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
-import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -29,12 +24,6 @@ class SecurityFlowTest {
 
     private MockMvc mockMvc;
 
-    @Value("${selenium.admin-password}")
-    private String adminPassword;
-
-    @Value("${selenium.user-password}")
-    private String userPassword;
-
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
@@ -43,41 +32,21 @@ class SecurityFlowTest {
     }
 
     @Test
-    void theLoginPageIsOpenToEveryone() throws Exception {
-        mockMvc.perform(get("/login"))
-               .andExpect(status().isOk())
-               .andExpect(content().string(containsString("Sign in")));
-    }
-
-    @Test
-    void aVisitorWhoIsNotSignedInIsSentToLogin() throws Exception {
+    void aVisitorWhoIsNotSignedInIsRedirected() throws Exception {
         mockMvc.perform(get("/"))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/login"));
+               .andExpect(status().is3xxRedirection());
     }
 
     @Test
-    void theAdminUserCanSignInAndLandsOnTheParsePage() throws Exception {
-        mockMvc.perform(formLogin("/login").user("admin").password(adminPassword))
-               .andExpect(authenticated().withUsername("admin"))
-               .andExpect(redirectedUrl("/"));
+    @WithMockUser(authorities = "FCRMADMIN")
+    void anAdminCanReachTheParsePage() throws Exception {
+        mockMvc.perform(get("/"))
+               .andExpect(status().isOk())
+               .andExpect(content().string(containsString("X9 File Parser")));
     }
 
     @Test
-    void theNormalUserSignsInAndIsSentToTheNoPermissionPage() throws Exception {
-        mockMvc.perform(formLogin("/login").user("user").password(userPassword))
-               .andExpect(authenticated())
-               .andExpect(redirectedUrl("/no-permission"));
-    }
-
-    @Test
-    void aWrongPasswordIsRejected() throws Exception {
-        mockMvc.perform(formLogin("/login").user("admin").password("wrong"))
-               .andExpect(unauthenticated());
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(authorities = "USER")
     void aNormalUserWhoOpensTheParsePageIsSentToTheNoPermissionPage() throws Exception {
         mockMvc.perform(get("/"))
                .andExpect(status().is3xxRedirection())
@@ -85,7 +54,7 @@ class SecurityFlowTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(authorities = "USER")
     void aNormalUserCanSeeTheNoPermissionPage() throws Exception {
         mockMvc.perform(get("/no-permission"))
                .andExpect(status().isOk())

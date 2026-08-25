@@ -22,7 +22,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import com.fcrm.fraud.x9parser.selenium.support.ScreenshotHelper;
 import java.time.Duration;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class SeleniumTestBase {
     private static final Logger log = LoggerFactory.getLogger(SeleniumTestBase.class);

@@ -6,9 +6,10 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class LoginPage {
-    private static final By USERNAME = By.id("username");
-    private static final By PASSWORD = By.id("password");
-    private static final By SUBMIT = By.cssSelector("form button[type='submit']");
+    private static final By USERNAME = By.name("identifier");
+    private static final By NEXT_BUTTON = By.cssSelector("input[type='submit']");
+    private static final By PASSWORD = By.name("credentials.passcode");
+    private static final By SUBMIT = By.cssSelector("input[type='submit']");
     private static final By ERROR = By.cssSelector(".error");
 
     private final WebDriver driver;
@@ -21,9 +22,11 @@ public class LoginPage {
 
     public void loginAs(String username, String password) {
         wait.until(ExpectedConditions.visibilityOfElementLocated(USERNAME)).sendKeys(username);
-        driver.findElement(PASSWORD).sendKeys(password);
+        driver.findElement(NEXT_BUTTON).click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(PASSWORD)).sendKeys(password);
         driver.findElement(PASSWORD).submit();
-        wait.until(ExpectedConditions.not(ExpectedConditions.urlContains("/login")));
+        wait.until(ExpectedConditions.urlContains("localhost"));
     }
     public boolean isDisplayed() {
         try {

@@ -7,12 +7,14 @@ import com.fcrm.fraud.x9parser.selenium.support.EmailReporter;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,9 +63,9 @@ public class X9AutomationTest extends SeleniumTestBase{
         parsePage.parseFile(x9File);
 
         ResultPage resultPage = new ResultPage(driver, wait);
-        screenshots.capture("parse-result");
-
         assertTrue(resultPage.isDisplayed());
+
+        screenshots.capture("parse-result"); 
         String summary = resultPage.getSummaryText();
         assertTrue(summary.contains("10"));
         assertTrue(summary.contains("20"));
@@ -72,13 +74,13 @@ public class X9AutomationTest extends SeleniumTestBase{
     @Test
     void normalUserCannotParse() throws IOException {
         openHome();
-
         LoginPage loginPage = new LoginPage(driver, wait);
         loginPage.loginAs(userUsername, userPassword);
+
+        wait.until(ExpectedConditions.urlContains("/no-permission"));
+
         screenshots.capture("normal-user-blocked");
-
         assertTrue(driver.getPageSource().contains("You do not have permission to parse files."));
-
         assertTrue(driver.getCurrentUrl().contains("/no-permission"));
     }
     @Test
@@ -88,10 +90,11 @@ public class X9AutomationTest extends SeleniumTestBase{
         loginPage.loginAs(adminUsername, adminPassword);
 
         ParsePage parsePage = new ParsePage(driver, wait);
-        parsePage.parseFile("/no/such/file.x9"); 
+        parsePage.parseFile("/no/such/file.x9");
 
-        System.out.println("handles: " + driver.getWindowHandles().size());
-        System.out.println("url: " + driver.getCurrentUrl());
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(
+            org.openqa.selenium.By.tagName("body"), "File not found"));
+
         screenshots.capture("bad-path-error");
 
         assertTrue(driver.getPageSource().contains("File not found"));

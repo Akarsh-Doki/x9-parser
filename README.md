@@ -23,7 +23,7 @@ large files (thousands of checks, GB-sized) without running out of memory.
 
 ## Running it
 
-Requires Java 21.
+Requires Java 21, and two environment variables for Okta. The AD server (the EC2 instance) needs to be running too, since Okta forwards password checks to it.
 
 ```
 ./mvnw spring-boot:run
@@ -53,15 +53,15 @@ Run the tests:
 
 ## Authentication
 
-Authentication and authorization are provided by Active Directory, running on
-a Windows Server EC2 instance. The application authenticates via LDAP bind
-against the domain `fcrm.local` and derives roles from AD group membership
-(members of `FCRMADMIN` can access the parse function).
+Login goes through Okta (OIDC), not a form on this app. Okta sits in front of the same Active Directory server used before, so when someone signs in, Okta forwards the password check to AD. AD is still the one deciding whether a password is correct. Okta also requires a second factor (Okta Verify) before letting anyone through.
 
-Running the app and its tests requires the AD server to be reachable. Because
-the security and Selenium tests authenticate against a live network directory
-rather than in-memory, they are occasionally slower or less
-deterministic than the rest of the suite (this is expected for tests against external infrastructure).
+Authorization comes from the `groups` claim Okta puts in the ID token. A
+`GrantedAuthoritiesMapper` bean reads that claim and turns each group into a Spring authority. Members of `FCRMADMIN` can reach the parse pages, everyone else is redirected to `/no-permission`.
+
+There is one gap: the AD Agent that syncs users and groups into Okta was not bringing group membership across, only the users themselves. `FCRMADMIN` is currently a group created directly in Okta rather than synced from AD. Users and passwords are still authenticated against AD.
+
+Running the app and its tests requires the AD server (the EC2 instance) to be running and the `OKTA_CLIENT_ID` and `OKTA_CLIENT_SECRET` environment
+variables set.
 
 ## Output CSV formats
 

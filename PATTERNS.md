@@ -165,43 +165,60 @@ deals with it or passes it along. Spring Security is built this way: every
 request goes through a chain of filters (check the session, handle the login
 form, check the URL rules) before reaching a controller.
 
-**Trade-off:** the path a request takes is spread across many filters rather
-than being in one place, which is harder to follow, but each filter stays small
-and the chain can be reordered or extended without touching the others.
+**Trade-off:** the path a request takes is distributed across many filters rather than being in one place, which is harder to follow, but each filter stays small and the chain can be reordered or extended without touching the others. Adding Okta only meant swapping which filter handles login (`oauth2Login` instead of `formLogin`); the URL rules and the denied-request handling did not move.
 
-**Where to see it:** `SecurityConfig.securityFilterChain` builds the chain, and
-the two handlers hook into specific points in it.
+**Where to see it:** `SecurityConfig.securityFilterChain` builds the chain, and the access-denied handler hooks into it through `exceptionHandling`.
 
 **Sample code:**
 ```java
 @Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                               ClientRegistrationRepository clientRegistrations) throws Exception {
     http
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/parse").hasRole("ADMIN")
+            .requestMatchers("/", "/parse").hasAuthority("FCRMADMIN")
             .anyRequest().authenticated())
-        .formLogin(form -> form.loginPage("/login").permitAll());
+        .oauth2Login(oauth2 -> oauth2.defaultSuccessUrl("/", true))
+        .exceptionHandling(handling -> handling
+            .accessDeniedHandler(this::sendToNoPermissionPage));
     return http.build();
 }
 ```
 
 ### 10. Role-Based Access Control (RBAC)
 
-**What it is:** permissions are attached to roles rather than to individual
-users, and users are given roles. Here the ADMIN role may parse files and the
-USER role may not.
+**What it is:** permissions are attached to a group rather than to individual
+users, and a user gets access by being a member of that group. Here membership
+in the `FCRMADMIN` group may parse files, and everyone else may not.
 
-**Trade-off:** adding a third kind of access means defining a new role and
-updating the rules, but permissions stay in one place instead of being checked
-per user throughout the code.
+**Trade-off:** adding a new kind of access still means one new group and one
+more `requestMatchers` rule, but who counts as an admin now lives in the
+identity provider instead of this app's own properties file, so changing it
+never touches this codebase.
 
-**Where to see it:** the roles come from the properties file, and the rules are
-in `securityFilterChain`.
+**Where to see it:** the group arrives on the `groups` claim of the ID token
+Okta issues, read by the `userAuthoritiesMapper` bean in `SecurityConfig`, and
+checked by the rule in `securityFilterChain`.
 
 **Sample code:**
-```properties
-x9.security.users[0].username=admin
-x9.security.users[0].role=ADMIN
+```java
+@Bean
+public GrantedAuthoritiesMapper userAuthoritiesMapper() {
+    return authorities -> {
+        Set<GrantedAuthority> mapped = new HashSet<>();
+        for (GrantedAuthority authority : authorities) {
+            if (authority instanceof OidcUserAuthority oidcAuth) {
+                Object groups = oidcAuth.getIdToken().getClaims().get("groups");
+                if (groups instanceof List<?> groupList) {
+                    for (Object group : groupList) {
+                        mapped.add(new SimpleGrantedAuthority(group.toString()));
+                    }
+                }
+            }
+        }
+        return mapped;   // FCRMADMIN becomes an authority the filter chain can check
+    };
+}
 ```
 
 ### 11. Page Object Model (Selenium tests)
@@ -265,6 +282,30 @@ flowchart TD
 ```
 
 Every object inside the box (the controller, the services, and the config) is a singleton. Spring creates one of each and injects it where it is needed. Because the services keep no state between requests, one shared instance handles many requests safely.
+
+
+### 12. Federated Identity / Delegated Authentication
+
+**What it is:** the app does not check passwords itself. It redirects the user
+to a separate identity provider (Okta), the provider does the actual login,
+and the app trusts a signed token handed back instead of a password. Inside
+that, Okta does not store the password either; it forwards the check to
+Active Directory (delegated authentication), so AD is still the one deciding
+whether a password is right.
+
+**Trade-off:** the app gives up direct control of the login screen and depends on an outside service being reachable, but it gains MFA, one place to disable a compromised account, and no passwords ever touching this codebase. It also means one bean is all that changes when the identity provider changes. This project went from a properties file, to a direct LDAP bind, to Okta, without touching the parsing code, the controllers, or the pages at all.
+
+**Where to see it:** `SecurityConfig.securityFilterChain`'s `oauth2Login`
+block, and the `spring.security.oauth2.client.*` keys in
+`application.properties`, which point at Okta's issuer URL rather than at AD
+directly.
+
+**Sample code:**
+```properties
+spring.security.oauth2.client.registration.okta.client-id=${OKTA_CLIENT_ID}
+spring.security.oauth2.client.registration.okta.client-secret=${OKTA_CLIENT_SECRET}
+spring.security.oauth2.client.provider.okta.issuer-uri=https://integrator-2451275.okta.com/oauth2/default
+```
 
 ## Architecture and deployment
 
